@@ -50,124 +50,128 @@ class Student{
 						sub[i][j] = Max[i][j] - Record[i][j];
 					}
 				}
-			//if can make opponent explode?!!!
-				vector<int> temp1;
-				temp1.clear();
+			//
+				int next_steps[5][6] , next_next_steps[5][6];
+				int the_biggest=0 , count=0;
 				for (int i=0 ; i<5 ; i++){
 					for (int j=0 ; j<6 ; j++){
-						if(sub[i][j] == 1 && is_oppon(color[i][j] , inputColor)){
-							if(find(i , j , 1 , color, inputColor , sub)) return;
+						if(color[i][j] == inputColor || color[i][j] == White){
+							next_steps[i][j] = stil_have_how_many_steps_(0, i , j , sub , color , inputColor);
+							if(next_steps[i][j] > the_biggest) {
+								x = i;
+								y = j;
+								the_biggest = next_steps[i][j];
+								count = 1;
+							}
+							else if(the_biggest == next_steps[i][j]) count++;
 						}
-						else if(sub[i][j] == 1){
-							temp1.push_back(i);
-							temp1.push_back(j);
-						}
+						else next_steps[i][j] = 100;
 					}
 				}
-			//if my ball is going to explode?
-				if(!temp1.empty()){
-					x = temp1[0];
-					y = temp1[1];
-					return;
-				}
-			//if there any possible to make opponent's ball explode in steps?
-				for (int i=0 ; i<5 ; i++){
-					for (int j=0 ; j<6 ; j++){
-						if(sub[i][j] != 0){
-							if(color[i][j] == inputColor || color[i][j] == White){
-								if(find(i , j , sub[i][j] , color, mmm(inputColor) , sub)){
+				vector<int> pos_x;
+				vector<int> pos_y;
+				pos_x.clear();
+				pos_y.clear();
+				if(count > 1){
+					for (int i=x ; i<5 ; i++){
+						if(count == 0) break;
+						for (int j=y ; i<6 ; i++){
+							if(count == 0) break;
+							if(next_steps[i][j] == the_biggest){
+								if(i == 0 || i == 5 || j == 0 || j == 5){
 									x = i;
 									y = j;
 									return;
 								}
-							}
-							else if(color[i][j] != Black){
-								if(find(i , j , sub[i][j] , color, inputColor , sub)){
-									return;
-								}
+								pos_x.push_back(i);
+								pos_y.push_back(j);
+								count--;
 							}
 						}
 					}
-				}
-			//just find an available place
-				int abc[4];
-				abc[0] = 6;
-				abc[1] = 6;
-				abc[2] = 6;
-				abc[3] = 6;
-				for (int i=4 ; i>-1 ; i--){
-					for (int j=5 ; j>-1 ; j--){
-						if(color[i][j] == White || color[i][j] == inputColor){
-							if(sub[i][j] == 4){
-								x = i;
-								y = j;
-								return;
-							}
-							else if(sub[i][j] == 3){
-								abc[0] = i;
-								abc[1] = j;
-							}
-							else {
-								abc[2] = i;
-								abc[3] = j;
-							}
-						}
-					}
-				}
-				if(abc[0] != 6){
-					x = abc[0];
-					y = abc[1];
+					x = pos_x[0];
+					y = pos_y[0];
 					return;
 				}
-				else {
-					x = abc[2];
-					y = abc[3];
-					return;
-				}
+				else if(count == 1) return;
 			}
         }
         // Any Code You Want to Add
-        bool is_good(){
-        	if()
-		}
-		Color mmm(Color mine){
+		Color colorrr(Color mine){
         	if(mine == Blue) return Red;
         	else return Blue;
 		}
-        bool is_oppon(Color need_check , Color inputColor){
-        	if(need_check != inputColor && need_check != White && need_check != Black) return true;
-        	else return false;
+		void go_through(int i , int j , int sub[5][6] , Color color[5][6] , Color inputColor){
+			sub[i][j]--;
+			color[i][j] = inputColor;
+			if(sub[i][j] == 0){
+				color[i][j] = Black;
+				if(i > 0){
+					color[i-1][j] = inputColor;
+					if(sub[i-1][j] == 1) go_through(i-1 , j , sub , color , inputColor);
+					else if(color[i-1][j] > 0) sub[i-1][j]--;
+					else color[i-1][j] = Black;
+				}
+				if(i < 5){
+					color[i+1][j] = inputColor;
+					if(sub[i+1][j] == 1) go_through(i+1 , j , sub , color , inputColor);
+					else if(color[i+1][j] > 0) sub[i+1][j]--;
+					else color[i+1][j] = Black;
+				}
+				if(j > 0){
+					color[i][j-1] = inputColor;
+					if(sub[i][j-1] == 1) go_through(i , j-1 , sub , color , inputColor);
+					else if(color[i][j-1] > 0) sub[i][j-1]--;
+					else color[i][j-1] = Black;
+				}
+				if(j < 6){
+					color[i][j+1] = inputColor;
+					if(sub[i][j+1] == 1) go_through(i , j+1 , sub , color , inputColor);
+					else if(color[i][j+1] > 0) sub[i][j+1]--;
+					else color[i][j+1] = Black;
+				}
+			}
+			return;
 		}
-		bool find(int i , int j , int now_check , Color color[5][6], Color inputColor , int sub[5][6]){
-			if(i > 0){
-				if(sub[i-1][j] == now_check && color[i-1][j] == inputColor){
-					x = i-1;
-					y = j;
-					return true;
+		int stil_have_how_many_steps_(int round , int i , int j , int sub[5][6] , Color color[5][6] , Color inputColor){
+			int now_sub[5][6];
+			Color now_color[5][6];
+			for (int a=0 ; a<5 ; a++){
+				for (int b=0 ; b<6 ; b++){
+					now_sub[a][b] = sub[a][b];
+					now_color[a][b] = color[a][b];
 				}
 			}
-			if(i < 4){
-				if(sub[i+1][j] == now_check && color[i+1][j] == inputColor){
-					x = i+1;
-					y = j;
-					return true;
+			go_through(i , j , now_sub , now_color , inputColor); //if choose [i][j] the map would be...
+			int oppo_steps=0 , my_steps=0;
+			for (int a=0 ; a<5 ; a++){
+				for (int b=0 ; b<6 ; b++){
+					if(color[a][b] == inputColor){
+						my_steps += now_sub[a][b];
+					}
+					if(color[a][b] !=  White && color[a][b] != Black){
+						oppo_steps += now_sub[a][b];
+					}
 				}
 			}
-			if(j > 0){
-				if(sub[i][j-1] == now_check && color[i][j-1] == inputColor){
-					x = i;
-					y = j-1;
-					return true;
+			if(round == 0){
+				int my_biggest = 0;
+				int next_oppo_x , next_oppo_y;
+				for (int a=0 ; a<5 ; a++){ //next next step
+					for (int b=0 ; b<6 ; b++){
+						if (now_color[5][6] == colorrr(inputColor)){
+							int x = stil_have_how_many_steps_(1 , a , b , now_sub , now_color , colorrr(inputColor));
+							if(x < my_biggest){
+								my_biggest = x;
+								next_oppo_x = a;
+								next_oppo_y = b;
+							}
+						}
+					}
 				}
 			}
-			if(j < 5){
-				if(sub[i][j+1] == now_check && color[i][j+1] == inputColor){
-					x = i;
-					y = j+1;
-					return true;
-				}
-			}
-			return false;
+			if(my_steps > oppo_steps) return my_steps - oppo_steps;
+			else return oppo_steps - my_steps;
 		}
 		int getX(){
             return x;
